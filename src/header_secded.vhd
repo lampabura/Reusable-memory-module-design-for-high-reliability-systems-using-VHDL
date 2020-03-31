@@ -144,7 +144,7 @@ package body header_secded is
     begin
         for i in 1 to code_width loop
             if(2**positive((ceil(log2(real(i))))) /= i) then
-                data(j) := code(i);
+                data(j-1) := code(i);
                 j := j + 1;
             end if;
         end loop;
