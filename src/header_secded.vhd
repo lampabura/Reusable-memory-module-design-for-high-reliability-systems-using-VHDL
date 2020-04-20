@@ -24,12 +24,21 @@ use ieee.math_real.all;
 
 package header_secded is
 
+    constant address_width: integer := 8;
     constant data_width: integer := 4;
+    constant registered_input: boolean := true;
+    constant registered_output: boolean := true;
+    constant dummy_scrubber: boolean := true;
+    
+    constant data_width_log2: integer := integer((ceil(log2(real(data_width)))));
+    
     function get_parity_size(constant k: integer) return integer;
     constant parity_width: integer := get_parity_size(data_width);
+    constant parity_width_log2: integer := integer((ceil(log2(real(parity_width)))));
+    
     function get_code_size(constant k: integer; constant m: integer) return integer;
     constant code_width: integer := get_code_size(data_width, parity_width);
-    constant code_width_log2: integer := positive((ceil(log2(real(code_width)))));
+    constant code_width_log2: integer := integer((ceil(log2(real(code_width)))));
     
     function get_delay(constant registered_input: boolean; constant registered_output: boolean) return integer;
     
@@ -38,9 +47,11 @@ package header_secded is
     function parity_to_code(constant data_code: std_logic_vector((code_width-1) downto 0)) return std_logic_vector;
     
     -- DECODE:
-    function get_syndrome(constant code: std_logic_vector((code_width-1) downto 0)) return std_logic_vector;
-    function correct_code(constant code: std_logic_vector((code_width-1) downto 0); constant syndrome: std_logic_vector((parity_width-1) downto 0)) return std_logic_vector;
     function get_data(constant code: std_logic_vector((code_width-1) downto 0)) return std_logic_vector;
+    function check(constant raw_code: std_logic_vector((code_width-1) downto 0); constant check_code: std_logic_vector((code_width-1) downto 0)) return std_logic_vector;
+    function code_get_parity(constant code: std_logic_vector((code_width-1) downto 0)) return std_logic_vector;
+    function parity_get_code(constant parity: std_logic_vector((parity_width-1) downto 0)) return std_logic_vector;
+    
 
 end package;
 
@@ -87,7 +98,7 @@ package body header_secded is
         variable code: std_logic_vector((code_width-1) downto 0) := (others => '0');
     begin
         for i in 1 to code_width loop
-            if(2**positive((ceil(log2(real(i))))) /= i) then
+            if(2**integer((ceil(log2(real(i))))) /= i) then
                 code(i-1) := data(j);
                 j := j + 1;
             end if;
@@ -101,7 +112,7 @@ package body header_secded is
         variable zero: std_logic_vector(code_width_log2 downto 0) := (others => '0');
     begin
         for i in 1 to code_width-1 loop
-            if(2**positive((ceil(log2(real(i))))) = i) then
+            if(2**integer((ceil(log2(real(i))))) = i) then
                 for j in i to code_width-1 loop
                     if((std_logic_vector(to_unsigned(i, code_width_log2+1)) and std_logic_vector(to_unsigned(j, code_width_log2+1)) ) /= zero) then
                         code(i-1) := code(i-1) xor code(j-1);
@@ -115,36 +126,13 @@ package body header_secded is
 
 ----------------------------------------------------------------------------------------------------
 
-    function get_syndrome(constant code: std_logic_vector((code_width-1) downto 0)) return std_logic_vector is
-        variable syndrome: std_logic_vector((parity_width-1) downto 0) := (others => '0');
-        variable zero: std_logic_vector(code_width_log2 downto 0) := (others => '0');
-    begin
-        for i in 1 to parity_width loop
-            for j in 1 to code_width loop
-                if((std_logic_vector(to_unsigned(i, code_width_log2+1)) & std_logic_vector(to_unsigned(j, code_width_log2+1)) ) /= zero) then
-                    syndrome(i) := syndrome(i) xor code(j);
-                end if;
-            end loop;
-        end loop;
-        return syndrome;
-    end function;
-
-
-    function correct_code(constant code: std_logic_vector((code_width-1) downto 0); constant syndrome: std_logic_vector((parity_width-1) downto 0)) return std_logic_vector is
-        variable corr_code: std_logic_vector((code_width-1) downto 0) := code;
-    begin
-        corr_code(to_integer(unsigned(syndrome))) := not corr_code(to_integer(unsigned(syndrome)));
-        return corr_code;
-    end function;
-    
-    
     function get_data(constant code: std_logic_vector((code_width-1) downto 0)) return std_logic_vector is
         variable data: std_logic_vector((data_width-1) downto 0) := (others => '0');
         variable j: integer := 0;
     begin
         for i in 1 to code_width loop
-            if(2**positive((ceil(log2(real(i))))) /= i) then
-                data(j-1) := code(i);
+            if(2**integer((ceil(log2(real(i))))) /= i) then
+                data(j) := code(i-1);
                 j := j + 1;
             end if;
         end loop;
@@ -152,6 +140,72 @@ package body header_secded is
     end function;
 
 
+    function check(constant raw_code: std_logic_vector((code_width-1) downto 0); constant check_code: std_logic_vector((code_width-1) downto 0)) return std_logic_vector is
+        variable bit_counter: std_logic_vector(2 downto 0) := (others => '0');
+        variable xcode: std_logic_vector((code_width-1) downto 0);
+    begin
+        xcode := raw_code xor check_code;
+        for i in 0 to code_width-1 loop
+            if(xcode(i) = '1') then
+                bit_counter := std_logic_vector(unsigned(bit_counter) + 1);
+            end if;
+        end loop;
+        return bit_counter;
+    end function;
+ 
+        
+    function code_get_parity(constant code: std_logic_vector((code_width-1) downto 0)) return std_logic_vector is
+        variable parity: std_logic_vector((parity_width-1) downto 0) := (others => '0');
+        variable j: integer := 0;
+    begin
+        for i in 1 to code_width loop
+             if(2**integer((ceil(log2(real(i))))) = i) then
+                parity(j) := code(i-1);
+                j := j + 1;
+             end if;
+        end loop;
+        return parity;
+    end function;
     
+    
+    function parity_get_code(constant parity: std_logic_vector((parity_width-1) downto 0)) return std_logic_vector is
+        variable code: std_logic_vector((code_width-1) downto 0) := (others => '0');
+        variable count: integer := 0;
+        variable j: integer := 0;
+        variable zero: std_logic_vector(code_width_log2 downto 0) := (others => '0');
+    begin
+    
+        for i in 0 to parity_width-1 loop
+            if(parity(i) = '1') then
+                count := count + 1;
+            end if;
+        end loop;
+        if((count mod 2) = 1) then
+            code := (others => '1');
+        end if;
+        
+        for i in 1 to code_width loop
+            if(2**integer((ceil(log2(real(i))))) = i) then
+                count := 0;
+                code(i-1) := parity(j);
+                j := j + 1;
+                for j in i to code_width-1 loop
+                    if((std_logic_vector(to_unsigned(i, code_width_log2+1)) and std_logic_vector(to_unsigned(j, code_width_log2+1)) ) /= zero) then
+                        if(code(j-1) = '1') then
+                            count := count + 1;
+                        end if;
+                    end if;
+                end loop;
+                if((count mod 2) = 1) then
+                    for j in i+1 to code_width-1 loop
+                        if((std_logic_vector(to_unsigned(i, code_width_log2+1)) and std_logic_vector(to_unsigned(j, code_width_log2+1)) ) /= zero) then
+                            code(j-1) := code(j-1) xor '1';
+                        end if;
+                    end loop;
+                end if;
+            end if;
+        end loop;
+        return code;
+    end function;
         
 end package body header_secded;

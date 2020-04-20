@@ -52,8 +52,8 @@ begin
 
     L_DUT: entity work.encoder(rtl)
         generic map(
-            registered_input => registered_input,
-            registered_output => registered_output
+            registered_input => true,
+            registered_output => true
         )
         port map(
             clk => clk,

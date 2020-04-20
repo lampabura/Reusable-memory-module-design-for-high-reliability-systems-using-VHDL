@@ -23,10 +23,6 @@ use work.header_secded.all;
 
 
 entity edac is
-    generic(
-        registered_input: boolean := true;
-        registered_output: boolean := true
-    );
     port(
         clk : in STD_LOGIC;
         rst_n : in STD_LOGIC;
@@ -37,18 +33,13 @@ entity edac is
         code_2_edac : in STD_LOGIC_VECTOR ((code_width-1) downto 0);
         raw_data_out : out STD_LOGIC_VECTOR ((data_width-1) downto 0);
         
-        err_1 : out STD_LOGIC;
-        err_2 : out STD_LOGIC
+        error : out std_logic_vector(1 downto 0)
     );
 end entity edac;
 
 architecture rtl of edac is
 begin
     L_ENCODER: entity work.encoder(rtl)
-    generic map(
-        registered_input => registered_input,
-        registered_output => registered_output
-    )
     port map(
         clk => clk,
         rst_n => rst_n,
@@ -57,17 +48,12 @@ begin
     );
     
     L_DECODER: entity work.decoder(rtl)
-    generic map(
-        registered_input => registered_input,
-        registered_output => registered_output
-    )
     port map(
         clk => clk,
         rst_n => rst_n,
         code_2_edac => code_2_edac,
         raw_data_out => raw_data_out,
-        err_1 => err_1,
-        err_2 => err_2
+        error => error
     );
 
 end rtl;

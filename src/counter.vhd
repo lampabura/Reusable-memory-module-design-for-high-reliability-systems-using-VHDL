@@ -28,11 +28,11 @@ entity counter is
         
         -- prescaler counts to seconds (depends on the clock)
         -- prescaler: 2**size
-        prescaler_size: integer := 17;
+        prescaler_size: integer;
         
         -- timer counts to hours (depends on the user)
         --timer: 2**size
-        timer_size: integer := 9
+        timer_size: integer
     );
     port(
         clk: in std_logic;
@@ -67,6 +67,6 @@ begin
             end if;
         end if;
     end process;
-    wakeup <= '1' when ((unsigned(prescaler) = 0) and (unsigned(timer) = 0));
+    wakeup <= '1' when ((unsigned(prescaler) = 0) and (unsigned(timer) = 0)) or (force = '1') else '0';
 
 end rtl;

@@ -24,10 +24,6 @@ use work.header_secded.all;
 
 
 entity encoder is
-    generic(
-        registered_input: boolean := true;
-        registered_output: boolean := true
-    );
     port(
         clk : in std_logic;
         rst_n : in std_logic;
@@ -55,8 +51,13 @@ begin
         end if;
     end process;
     input <= input_reg when registered_input = true else raw_data_in;
-    
-    code <= parity_to_code(data_to_code(input));
+
+
+    L_ENCODE: process(input)
+    begin
+        code <= parity_to_code(data_to_code(input));
+    end process;
+
 
     L_OUTPUT: process(clk, rst_n)
     begin
