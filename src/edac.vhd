@@ -19,7 +19,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.math_real.all;
-use work.header_secded.all;
+library xil_defaultlib;
+use xil_defaultlib.header_secded.all;
 
 
 entity edac is
@@ -39,7 +40,7 @@ end entity edac;
 
 architecture rtl of edac is
 begin
-    L_ENCODER: entity work.encoder(rtl)
+    L_ENCODER: entity xil_defaultlib.encoder(rtl)
     port map(
         clk => clk,
         rst_n => rst_n,
@@ -47,7 +48,7 @@ begin
         code_2_mem => code_2_mem
     );
     
-    L_DECODER: entity work.decoder(rtl)
+    L_DECODER: entity xil_defaultlib.decoder(rtl)
     port map(
         clk => clk,
         rst_n => rst_n,

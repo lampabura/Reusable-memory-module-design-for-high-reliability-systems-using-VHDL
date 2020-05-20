@@ -20,7 +20,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.math_real.all;
-use work.header_secded.all;
+library xil_defaultlib;
+use xil_defaultlib.header_secded.all;
 
 
 entity scrubber is
@@ -29,15 +30,15 @@ entity scrubber is
         timer_size: integer := 9
     );
     port(
-        clk : in std_logic;
-        rst_n : in std_logic;
-        force : in std_logic;
-        err_rst: in std_logic;
+        clk: in std_logic;
+        rst_n: in std_logic;
+        force_scrub: in std_logic;
+        error_rst: in std_logic;
         
         trigger_read: out std_logic;
         trigger_write: out std_logic;
-        busy : out std_logic;
-        address : out STD_LOGIC_VECTOR ((address_width-1) downto 0);
+        busy: out std_logic;
+        address: out STD_LOGIC_VECTOR ((address_width-1) downto 0);
         fsm_error: out std_logic
     );
 end scrubber;
@@ -52,12 +53,15 @@ architecture rtl of scrubber is
         control_2,
         error
     );
-    signal state: state_t;
-    attribute syn_preserve: boolean;
-    attribute syn_preserve of state: signal is true;
+    attribute syn_enum_encoding: string;
+	attribute syn_enum_encoding of state_t : type is "onehot";
+	
+	signal state: state_t;
+	attribute syn_preserve: boolean;
+    attribute syn_preserve of state:signal is true;
     
     
-    signal delay: integer := get_delay(registered_input,registered_output);
+    constant delay: integer := get_delay(registered_input,registered_output);
     signal delay_counter: integer;
 
     signal pointer: std_logic_vector((address_width-1) downto 0);
@@ -66,6 +70,8 @@ architecture rtl of scrubber is
 
     signal input_idle: std_logic;
     signal wakeup: std_logic;
+    
+    signal error_reset_reg: std_logic;
 
 begin
 
@@ -73,7 +79,7 @@ begin
 
 L_SCRUBBER: if dummy_scrubber = false generate
 
-    L_SCRUBBER_COUNTER: entity work.counter(rtl)
+    L_SCRUBBER_COUNTER: entity xil_defaultlib.counter(rtl)
         generic map(
             prescaler_size => prescaler_size,
             timer_size => timer_size
@@ -82,7 +88,7 @@ L_SCRUBBER: if dummy_scrubber = false generate
             clk => clk,
             rst_n => rst_n,
             input_idle => input_idle,
-            force => force,
+            force_count => force_scrub,
             wakeup => wakeup
         );
         
@@ -90,7 +96,13 @@ L_SCRUBBER: if dummy_scrubber = false generate
     L_SCRUBBER_FSM: process(clk, rst_n)
     begin
         if(rst_n = '0') then
-            
+            state <= idle;
+            busy <= '0';
+            pointer <= address_min;
+            input_idle <= '1';
+            fsm_error <= '0';
+            trigger_read <= '0';
+            trigger_write <= '0';
         elsif(rising_edge(clk)) then
             case state is
                 when idle =>        if(wakeup = '1') then 
@@ -110,39 +122,48 @@ L_SCRUBBER: if dummy_scrubber = false generate
                                         busy <= '0';
                                     end if;               
                                 
-                when read =>        if(delay = 0) then
+                when read =>        if(delay_counter = 0) then
                                         trigger_read <= '0';
                                         delay_counter <= delay;
                                         state <= write;
+                                        trigger_write <= '0';
+                                    else
+                                        delay_counter <= delay_counter - 1;
                                     end if;
-                                    delay_counter <= delay_counter - 1;
                                 
-                when write =>       if( delay = 0) then
+                when write =>       if( delay_counter = 0) then
                                         trigger_write <= '1';
                                         state <= control_2;
+                                    else
+                                        delay_counter <= delay_counter - 1;
                                     end if;
-                                    delay_counter <= delay_counter - 1;
                 
                 when control_2 =>   trigger_write <= '0';
                                     pointer <= std_logic_vector(unsigned(pointer) + 1);
                                     state <= control_1;
 
 
-                when error =>       pointer <= address_min;
-                                    trigger_read <= '0';
-                                    trigger_write <= '0';
-                                    fsm_error <= '0';
-                                    input_idle <= '1';
-                                    state <= idle;
+                when error =>       if(error_reset_reg = '1') then
+                                        pointer <= address_min;
+                                        trigger_read <= '0';
+                                        trigger_write <= '0';
+                                        fsm_error <= '0';
+                                        input_idle <= '1';
+                                        state <= idle;
+                                        busy <= '0';
+                                    end if;
+                                    
 
                 when others =>      fsm_error <= '1';
                                     state <= error;
 
             end case;              
         end if;
-    
+        
     end process;
-
+    address <= pointer;
+    error_reset_reg <= error_rst;
+    
 end generate L_SCRUBBER;
 
 
@@ -150,7 +171,10 @@ end generate L_SCRUBBER;
 L_DUMMY: if dummy_scrubber = true generate
     
     busy <= '0';
-    address <= (others => '0');
+    address <= address_min;
+    fsm_error <= '0';
+    trigger_read <= '0';
+    trigger_write <= '0';
 
 end generate L_DUMMY;
 

@@ -28,17 +28,17 @@ package header_secded is
     constant data_width: integer := 4;
     constant registered_input: boolean := true;
     constant registered_output: boolean := true;
-    constant dummy_scrubber: boolean := true;
+    constant dummy_scrubber: boolean := false;
     
-    constant data_width_log2: integer := integer((ceil(log2(real(data_width)))));
+    constant data_width_log2: integer;
     
     function get_parity_size(constant k: integer) return integer;
-    constant parity_width: integer := get_parity_size(data_width);
-    constant parity_width_log2: integer := integer((ceil(log2(real(parity_width)))));
+    constant parity_width: integer;
+    constant parity_width_log2: integer;
     
     function get_code_size(constant k: integer; constant m: integer) return integer;
-    constant code_width: integer := get_code_size(data_width, parity_width);
-    constant code_width_log2: integer := integer((ceil(log2(real(code_width)))));
+    constant code_width: integer;
+    constant code_width_log2: integer;
     
     function get_delay(constant registered_input: boolean; constant registered_output: boolean) return integer;
     
@@ -207,5 +207,15 @@ package body header_secded is
         end loop;
         return code;
     end function;
-        
+    
+    
+    
+    constant data_width_log2: integer := integer((ceil(log2(real(data_width)))));
+    
+    constant parity_width: integer := get_parity_size(data_width);
+    constant parity_width_log2: integer := integer((ceil(log2(real(parity_width)))));
+    
+    constant code_width: integer := get_code_size(data_width, parity_width);
+    constant code_width_log2: integer := integer((ceil(log2(real(code_width)))));
+      
 end package body header_secded;

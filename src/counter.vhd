@@ -38,15 +38,16 @@ entity counter is
         clk: in std_logic;
         rst_n: in std_logic;
         input_idle: in std_logic;
-        force: in std_logic;
+        force_count: in std_logic;
         wakeup: out std_logic
     );
 end counter;
 
 architecture rtl of counter is
 
-    signal prescaler: std_logic_vector((prescaler_size-1) downto 0) := (others => '1');
-    signal timer: std_logic_vector((timer_size-1) downto 0) := (others => '1');
+    signal prescaler: std_logic_vector((prescaler_size-1) downto 0);
+    signal timer: std_logic_vector((timer_size-1) downto 0);
+    signal rforce: std_logic;
 
 begin
 
@@ -55,8 +56,10 @@ begin
         if(rst_n = '0') then
             prescaler <= (others => '1');
             timer <= (others => '1');
+            rforce <= '0';
         elsif(rising_edge(clk)) then
-            if(force = '1') then
+            rforce <= force_count;
+            if(rforce = '1') then
                 prescaler <= (others => '1');
                 timer <= (others => '1');
             elsif(input_idle = '1') then
@@ -66,7 +69,8 @@ begin
                 end if;
             end if;
         end if;
+        
     end process;
-    wakeup <= '1' when ((unsigned(prescaler) = 0) and (unsigned(timer) = 0)) or (force = '1') else '0';
+    wakeup <= '1' when ((unsigned(prescaler) = 0) and (unsigned(timer) = 0)) or (rforce = '1') else '0';
 
 end rtl;
