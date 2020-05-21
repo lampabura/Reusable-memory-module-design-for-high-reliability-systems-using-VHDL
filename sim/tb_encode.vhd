@@ -1,14 +1,14 @@
 ----------------------------------------------------------------------------------------------------
--- Engineer: Tóth Ádám Raymond
--- Advisor: Dr. Horváth Péter
+-- Engineer: TÃ³th ÃdÃ¡m Raymond
+-- Advisor: Dr. HorvÃ¡th PÃ©ter
 
--- University: Budapesti Mûszaki és Gazdaságtudományi Egyetem
--- Faculty: Villamosmérnöki és Informatikai Kar
--- Department: Elektronikus Eszközök Tanszék
+-- University: Budapesti MÃ»szaki Ã©s GazdasÃ¡gtudomÃ¡nyi Egyetem
+-- Faculty: VillamosmÃ©rnÃ¶ki Ã©s Informatikai Kar
+-- Department: Elektronikus EszkÃ¶zÃ¶k TanszÃ©k
 
 -- Semester: 2019/20/2
 
--- Design Name: Újrafelhasználható memóriamodul nagymegbízhatóságú rendszerekhez
+-- Design Name: ÃšjrafelhasznÃ¡lhatÃ³ memÃ³riamodul nagymegbÃ­zhatÃ³sÃ¡gÃº rendszerekhez
 -- Module Name:
 
 -- Description: 
@@ -150,7 +150,7 @@ begin
         wait on rst_n;
         wait on rst_n;
         
-        loop wait on data_out;
+        loop wait on code_out;
             reference_code <= convert2code(data_out,rotparityr(chkbits_out));
             main_code <= code_out;
             
