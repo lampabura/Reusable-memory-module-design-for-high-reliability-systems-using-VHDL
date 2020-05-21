@@ -40,6 +40,10 @@ entity counter is
         input_idle: in std_logic;
         force_count: in std_logic;
         wakeup: out std_logic
+        
+        --For testing:
+        --prescaler_state: out std_logic_vector((prescaler_size-1) downto 0);
+        --timer_state: out std_logic_vector((timer_size-1) downto 0)
     );
 end counter;
 
@@ -72,5 +76,8 @@ begin
         
     end process;
     wakeup <= '1' when ((unsigned(prescaler) = 0) and (unsigned(timer) = 0)) or (rforce = '1') else '0';
+    --For testing:
+    --prescaler_state <= prescaler;
+    --timer_state <= timer;
 
 end rtl;

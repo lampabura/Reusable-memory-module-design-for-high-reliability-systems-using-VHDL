@@ -44,12 +44,15 @@ architecture behavior of tb_timer is
     signal force: std_logic := '0';
     signal wakeup: std_logic;
     
+    signal presc: std_logic_vector(0 downto 0);
+    signal timer: std_logic_vector(1 downto 0);
+    
 begin
 
     L_DUT: entity xil_defaultlib.counter
         generic map(
             prescaler_size => 1,
-            timer_size => 1
+            timer_size => 2
         )
         port map(
             clk => clk,
@@ -57,6 +60,8 @@ begin
             input_idle => idle,
             force_count => force,
             wakeup => wakeup
+            --prescaler_state => presc,
+            --timer_state => timer
         );
 
 

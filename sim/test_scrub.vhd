@@ -32,18 +32,29 @@ end tb_scrub;
 architecture behavior of tb_scrub is
 
     -- clk: 100MHz
-    constant clk_period: time := 10 ns;
+    constant clk_period: time := 6 ns;
 
     constant wait_t: time := clk_period * get_delay(registered_input,registered_output);
     
+    signal encode: std_logic := '0';
+    
     signal clk: std_logic := '0';
     signal rst_n: std_logic := '1';
+    signal reset: std_logic := '0';
+    signal clken: std_logic := '1';
+    signal ecc_correct_n : STD_LOGIC := '0';
     
     signal raw_data_in: std_logic_vector ((data_width-1) downto 0) := (others => '0');
+    signal data_out: std_logic_vector ((data_width-1) downto 0);
     signal code_out: std_logic_vector ((code_width-1) downto 0);
     
     signal code_in: std_logic_vector ((code_width-1) downto 0) := (others => '0');
+    signal data_in: std_logic_vector ((data_width-1) downto 0) := (others => '0');
+    signal chkbits_in: std_logic_vector ((parity_width-1) downto 0) := (others => '0');
+    signal chkbits_out: std_logic_vector ((parity_width-1) downto 0);
     signal raw_data_out: std_logic_vector ((data_width-1) downto 0);
+    signal sbit_err : STD_LOGIC;
+    signal dbit_err : STD_LOGIC;
     
     signal error: std_logic_vector(1 downto 0);
     
@@ -65,7 +76,7 @@ architecture behavior of tb_scrub is
     
 begin
 
-    L_DUT: entity xil_defaultlib.top
+    L_DUT: entity xil_defaultlib.wrapper
         port map(
             clk => clk,
             rst_n => rst_n,
@@ -82,7 +93,20 @@ begin
             forcer => force_top,
             busy => busy,
             re => re,
-            address => address
+            address => address,
+
+
+            ecc_clk => clk,
+            ecc_reset => reset,
+            ecc_encode => encode,
+            ecc_correct_n => ecc_correct_n,
+            ecc_clken => clken,
+            ecc_data_in => data_in,
+            ecc_data_out => data_out,
+            ecc_chkbits_in => chkbits_in,
+            ecc_chkbits_out => chkbits_out,
+            ecc_sbit_err => sbit_err,
+            ecc_dbit_err => dbit_err
         );
 
 

@@ -1,14 +1,14 @@
 ----------------------------------------------------------------------------------------------------
--- Engineer: TÃ³th ÃdÃ¡m Raymond
--- Advisor: Dr. HorvÃ¡th PÃ©ter
+-- Engineer: Tóth Ádám Raymond
+-- Advisor: Dr. Horváth Péter
 
--- University: Budapesti MÃ»szaki Ã©s GazdasÃ¡gtudomÃ¡nyi Egyetem
--- Faculty: VillamosmÃ©rnÃ¶ki Ã©s Informatikai Kar
--- Department: Elektronikus EszkÃ¶zÃ¶k TanszÃ©k
+-- University: Budapesti Mûszaki és Gazdaságtudományi Egyetem
+-- Faculty: Villamosmérnöki és Informatikai Kar
+-- Department: Elektronikus Eszközök Tanszék
 
 -- Semester: 2019/20/2
 
--- Design Name: ÃšjrafelhasznÃ¡lhatÃ³ memÃ³riamodul nagymegbÃ­zhatÃ³sÃ¡gÃº rendszerekhez
+-- Design Name: Újrafelhasználható memóriamodul nagymegbízhatóságú rendszerekhez
 -- Module Name:
 
 -- Description: 
@@ -36,6 +36,8 @@ architecture behavior of tb_decode is
 
     constant wait_t: time := clk_period * get_delay(registered_input,registered_output);
     
+    signal encode: std_logic := '0';
+    
     signal clk: std_logic := '0';
     signal rst_n: std_logic := '1';
     signal reset: std_logic := '0';
@@ -49,6 +51,7 @@ architecture behavior of tb_decode is
     signal code_in: std_logic_vector ((code_width-1) downto 0) := (others => '0');
     signal data_in: std_logic_vector ((data_width-1) downto 0) := (others => '0');
     signal chkbits_in: std_logic_vector ((parity_width-1) downto 0) := (others => '0');
+    signal chkbits_out: std_logic_vector ((parity_width-1) downto 0);
     signal raw_data_out: std_logic_vector ((data_width-1) downto 0);
     signal sbit_err : STD_LOGIC;
     signal dbit_err : STD_LOGIC;
@@ -74,7 +77,7 @@ architecture behavior of tb_decode is
     
 begin
 
-    L_DUT: entity xil_defaultlib.wrapper_dec
+    L_DUT: entity xil_defaultlib.wrapper
         port map(
             clk => clk,
             rst_n => rst_n,
@@ -96,11 +99,13 @@ begin
 
             ecc_clk => clk,
             ecc_reset => reset,
+            ecc_encode => encode,
             ecc_correct_n => ecc_correct_n,
             ecc_clken => clken,
             ecc_data_in => data_in,
             ecc_data_out => data_out,
             ecc_chkbits_in => chkbits_in,
+            ecc_chkbits_out => chkbits_out,
             ecc_sbit_err => sbit_err,
             ecc_dbit_err => dbit_err
         );
@@ -196,7 +201,7 @@ begin
         wait on rst_n;
         wait on rst_n;
         
-        loop wait on raw_data_out;
+        loop wait for wait_t;
             if raw_data_out = data_out then
                 test_ok <= '1';
             else

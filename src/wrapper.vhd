@@ -2,10 +2,11 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.math_real.all;
+
 library xil_defaultlib;
 use xil_defaultlib.header_secded.all;
 
-entity wrapper_enc is
+entity wrapper is
     port(
         clk: in std_logic;
         rst_n: in std_logic;
@@ -24,27 +25,36 @@ entity wrapper_enc is
         re: out std_logic;
         address: out std_logic_vector ((address_width-1) downto 0);
 
-
         ecc_clk : IN STD_LOGIC;
         ecc_reset : IN STD_LOGIC;
+        ecc_encode : IN STD_LOGIC;
+        ecc_correct_n : IN STD_LOGIC;
         ecc_clken : IN STD_LOGIC;
         ecc_data_in : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
         ecc_data_out : OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
-        ecc_chkbits_out : OUT STD_LOGIC_VECTOR(3 DOWNTO 0)
+        ecc_chkbits_out : OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
+        ecc_chkbits_in : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
+        ecc_sbit_err : OUT STD_LOGIC;
+        ecc_dbit_err : OUT STD_LOGIC
     );
-end wrapper_enc;
+end wrapper;
 
-architecture Behavioral of wrapper_enc is
+architecture Behavioral of wrapper is
 
     -- COMP_TAG
-    COMPONENT ecc_enc
+    COMPONENT ref_ecc
       PORT (
         ecc_clk : IN STD_LOGIC;
         ecc_reset : IN STD_LOGIC;
+        ecc_encode : IN STD_LOGIC;
+        ecc_correct_n : IN STD_LOGIC;
         ecc_clken : IN STD_LOGIC;
         ecc_data_in : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
         ecc_data_out : OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
-        ecc_chkbits_out : OUT STD_LOGIC_VECTOR(3 DOWNTO 0)
+        ecc_chkbits_out : OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
+        ecc_chkbits_in : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
+        ecc_sbit_err : OUT STD_LOGIC;
+        ecc_dbit_err : OUT STD_LOGIC
       );
     END COMPONENT;
     -- COMP_TAG_END
@@ -69,18 +79,23 @@ begin
             busy => busy,
             re => re,
             address => address
-    );
+        );
     
     -- INST_TAG
-    L_REFERENCE : ecc_enc
-        PORT MAP (
-            ecc_clk => ecc_clk,
-            ecc_reset => ecc_reset,
-            ecc_clken => ecc_clken,
-            ecc_data_in => ecc_data_in,
-            ecc_data_out => ecc_data_out,
-            ecc_chkbits_out => ecc_chkbits_out
-        );
+    L_REFERENCE: ref_ecc
+      PORT MAP (
+        ecc_clk => ecc_clk,
+        ecc_reset => ecc_reset,
+        ecc_encode => ecc_encode,
+        ecc_correct_n => ecc_correct_n,
+        ecc_clken => ecc_clken,
+        ecc_data_in => ecc_data_in,
+        ecc_data_out => ecc_data_out,
+        ecc_chkbits_out => ecc_chkbits_out,
+        ecc_chkbits_in => ecc_chkbits_in,
+        ecc_sbit_err => ecc_sbit_err,
+        ecc_dbit_err => ecc_dbit_err
+      );
     -- INST_TAG_END 
 
 end Behavioral;
